@@ -2,6 +2,7 @@ const React = require("react");
 const createMatcher = require("feather-route-matcher").default;
 
 async function matchFederatedPage(remotes, path) {
+  if(!remotes) {console.error('No __REMOTES__ webpack global defined or no remotes passed to catchAll')}
   const maps = await Promise.all(
     remotes.map((remote) =>
       window[remote]
