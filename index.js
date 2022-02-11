@@ -1,17 +1,35 @@
 const React = require("react");
 const createMatcher = require("feather-route-matcher").default;
+// const { Parser, ProcessNodeDefinitions } = require("html-to-react");
+// const stringifyDeterministic = require("json-stringify-deterministic");
+// const sortRecursive = require("sort-keys-recursive");
+// const ErrorBoundary = require("./ErrorBoundary");
+// const { captureException } = require("./sentry");
+// const { useRouter } = require("next/router");
+
+//catch all handling
 
 async function matchFederatedPage(remotes, path) {
-  if(!remotes) {console.error('No __REMOTES__ webpack global defined or no remotes passed to catchAll')}
+  if (!remotes) {
+    console.error(
+      "No __REMOTES__ webpack global defined or no remotes passed to catchAll"
+    );
+  }
   const maps = await Promise.all(
-    remotes.map((remote) =>
-      window[remote]
-        .get("./pages-map")
-        .then((factory) => ({ remote, config: factory().default }))
-        .catch(() => null)
-    )
-  );
+    Object.entries(remotes).map(([remote, loadRemote]) => {
+      console.log("page map", remote, loadRemote);
+      const loadOrReferenceRemote = !window[remote]
+        ? loadRemote()
+        : window[remote];
 
+      return Promise.resolve(loadOrReferenceRemote).then((container) => {
+        return container
+          .get("./pages-map")
+          .then((factory) => ({ remote, config: factory().default }))
+          .catch(() => null);
+      });
+    })
+  );
   const config = {};
 
   for (let map of maps) {
@@ -31,7 +49,7 @@ async function matchFederatedPage(remotes, path) {
   return match;
 }
 
-function createFederatedCatchAll(remotes, ErrorComponent,NotFoundComponent) {
+function createFederatedCatchAll(remotes, ErrorComponent, NotFoundComponent) {
   const FederatedCatchAll = (initialProps) => {
     const [lazyProps, setProps] = React.useState({});
 
@@ -40,10 +58,14 @@ function createFederatedCatchAll(remotes, ErrorComponent,NotFoundComponent) {
       ...initialProps,
     };
 
-    React.useEffect(async () => {
+    React.useEffect(() => {
+      console.log(" in effect", FederatedPage, "needs reload", needsReload);
       if (needsReload) {
-        const federatedProps = await FederatedCatchAll.getInitialProps(props);
-        setProps(federatedProps);
+        FederatedCatchAll.getInitialProps(props).then((federatedProps) => {
+          console.log("federated props", federatedProps);
+
+          setProps(federatedProps);
+        });
       }
     }, []);
 
@@ -60,22 +82,37 @@ function createFederatedCatchAll(remotes, ErrorComponent,NotFoundComponent) {
     }, [render404, is404]);
 
     if (render404) {
-      if(is404) {
-        return NotFoundComponent ? React.createElement(NotFoundComponent, props) : React.createElement("h1", {}, "404 Not Found")
+      if (is404) {
+        return NotFoundComponent
+          ? React.createElement(NotFoundComponent, props)
+          : React.createElement("h1", {}, "404 Not Found");
       } else {
-        return null
+        return null;
       }
     }
 
     if (renderError) {
-      return ErrorComponent ? React.createElement(ErrorComponent,props) : React.createElement("h1", {}, "Oops, something went wrong.");
+      return ErrorComponent
+        ? React.createElement(ErrorComponent, props)
+        : React.createElement("h1", {}, "Oops, something went wrong.");
     }
+    console.log(initialProps.FederatedPage,lazyProps.FederatedPage)
 
-    if (FederatedPage) {
-      return React.createElement(FederatedPage, props);
+    if (lazyProps.FederatedPage) {
+      console.log('page exists')
+      return React.createElement(lazyProps.FederatedPage, props)
     }
-
-    return null;
+    if (initialProps.FederatedPage) {
+      console.log('page exist on initial')
+      return React.createElement(initialProps.FederatedPage, props)
+    }
+    if(needsReload) {
+      return null
+    }
+    if(process.browser) {
+      window.location.reload()
+    }
+    return null
   };
 
   FederatedCatchAll.getInitialProps = async (ctx) => {
@@ -111,11 +148,10 @@ function createFederatedCatchAll(remotes, ErrorComponent,NotFoundComponent) {
       } catch (initErr) {
         console.log("initErr", initErr);
       }
-
+      console.log("finding remote", remote);
       const FederatedPage = await window[remote]
         .get(mod)
         .then((factory) => factory().default);
-      console.log("FederatedPage", FederatedPage);
       if (!FederatedPage) {
         // TODO: Run getInitialProps for 404 page
         return { render404: true, ...props };
@@ -136,10 +172,9 @@ function createFederatedCatchAll(remotes, ErrorComponent,NotFoundComponent) {
     }
   };
 
-  return FederatedCatchAll;
+  return FederatedCatchAll
 }
 
 module.exports = {
-  matchFederatedPage,
   createFederatedCatchAll,
 };
