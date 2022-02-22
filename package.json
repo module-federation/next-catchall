@@ -1,6 +1,6 @@
 {
   "name": "@module-federation/next-catchall",
-  "version": "0.0.2",
+  "version": "0.0.9",
   "license": "MIT",
   "main": "index.js",
   "types": "index.d.ts",
@@ -9,6 +9,9 @@
     "index.js",
     "next-with-federated-prerender.js"
   ],
+  "peerDependencies": {
+    "react": "^17.0.2"
+  },
   "dependencies": {
     "@sentry/browser": "^6.10.0",
     "@sentry/node": "^6.10.0",
@@ -16,7 +19,6 @@
     "feather-route-matcher": "4.0.0",
     "html-to-react": "1.4.7",
     "json-stringify-deterministic": "1.0.2",
-    "react": "^17.0.2",
     "sort-keys-recursive": "2.1.2",
     "webpack-virtual-modules": "0.4.3"
   }

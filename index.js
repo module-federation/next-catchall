@@ -96,23 +96,23 @@ function createFederatedCatchAll(remotes, ErrorComponent, NotFoundComponent) {
         ? React.createElement(ErrorComponent, props)
         : React.createElement("h1", {}, "Oops, something went wrong.");
     }
-    console.log(initialProps.FederatedPage,lazyProps.FederatedPage)
+    console.log(initialProps.FederatedPage, lazyProps.FederatedPage);
 
     if (lazyProps.FederatedPage) {
-      console.log('page exists')
-      return React.createElement(lazyProps.FederatedPage, props)
+      console.log("page exists");
+      return React.createElement(lazyProps.FederatedPage, props);
     }
     if (initialProps.FederatedPage) {
-      console.log('page exist on initial')
-      return React.createElement(initialProps.FederatedPage, props)
+      console.log("page exist on initial");
+      return React.createElement(initialProps.FederatedPage, props);
     }
-    if(needsReload) {
-      return null
+    if (needsReload) {
+      return null;
     }
-    if(process.browser) {
-      window.location.reload()
+    if (process.browser) {
+      window.location.reload();
     }
-    return null
+    return null;
   };
 
   FederatedCatchAll.getInitialProps = async (ctx) => {
@@ -172,7 +172,7 @@ function createFederatedCatchAll(remotes, ErrorComponent, NotFoundComponent) {
     }
   };
 
-  return FederatedCatchAll
+  return FederatedCatchAll;
 }
 
 module.exports = {
